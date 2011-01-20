@@ -6,29 +6,33 @@ Licensed under the Eiffel Forum License 2.
 
 http://inamidst.com/phenny/
 """
-
+import pickle
 import re, urllib
 import web
 from tools import deprecated
 from BeautifulSoup import BeautifulStoneSoup
 
-r_li = re.compile(r'(?ims)<li>.*?</li>')
-r_tag = re.compile(r'<[^>]+>')
-r_parens = re.compile(r'(?<=\()(?:[^()]+|\([^)]+\))*(?=\))')
-r_word = re.compile(r'^[A-Za-z0-9\' -]+$')
+configdir = '/home/terasa/.phenny/'
 
 uri = 'http://ws.audioscrobbler.com/2.0/?method=user.getRecentTracks&user=%s&limit=1&api_key=d79a33d26929cc5ebe75411c0864f6be'
-r_info = re.compile(
-   r'(?:ResultBody"><br /><br />(.*?)&nbsp;)|(?:<b>(.*?)</b>)'
-)
+
+lfmnames_file = open(configdir+'lfmnames','rb')
+lfmnames = pickle.load(lfmnames_file)
+lfmnames_file.close()
 
 def lastfm(phenny, origin):
    nick = origin.nick
+   if origin.group(2):
+     nick = origin.group(2)
+   if nick in lfmnames:
+     nick = lfmnames[nick]
+     
    nick = urllib.quote(nick.encode('utf-8'))
    
    res = web.get(uri % nick)
    
    soup = BeautifulStoneSoup(res)
+   
    
    def get_answer():
     np_track = soup.lfm.recenttracks('track',nowplaying="true")
@@ -55,7 +59,32 @@ def lastfm(phenny, origin):
    phenny.say(get_answer())
    return
    
-lastfm.commands = ['lfm']
+def regname(phenny, origin):
+  
+   lfmnames_file = open(configdir+'lfmnames','rb')
+   lfmnames = pickle.load(lfmnames_file)
+   lfmnames_file.close()
+  
+   if origin.group(3):
+     nick=origin.group(2)
+     lfmnick=origin.group(3)
+   else:
+     nick=origin.nick
+     lfmnick = origin.group(2)
+   
+  
+   lfmnames.update({nick:lfmnick})
+  
+   lfmnames_file = open(configdir+'lfmnames','wb')
+   pickle.dump(lfmnames,lfmnames_file)
+   lfmnames_file.close()
+  
+   phenny.say('IRC nickname %s registered to last.fm nickname %s.'%(nick,lfmnick))
+   return
+  
+   
+lastfm.commands = ['lfm','np']
+regname.commands = ['reglfm']
 
 if __name__ == '__main__': 
    print __doc__.strip()
