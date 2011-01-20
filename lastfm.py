@@ -16,25 +16,8 @@ configdir = '/home/terasa/.phenny/'
 
 uri = 'http://ws.audioscrobbler.com/2.0/?method=user.getRecentTracks&user=%s&limit=1&api_key=d79a33d26929cc5ebe75411c0864f6be'
 
-lfmnames_file = open(configdir+'lfmnames','rb')
-lfmnames = pickle.load(lfmnames_file)
-lfmnames_file.close()
 
-def lastfm(phenny, origin):
-   nick = origin.nick
-   if origin.group(2):
-     nick = origin.group(2)
-   if nick in lfmnames:
-     nick = lfmnames[nick]
-     
-   nick = urllib.quote(nick.encode('utf-8'))
-   
-   res = web.get(uri % nick)
-   
-   soup = BeautifulStoneSoup(res)
-   
-   
-   def get_answer():
+def get_answer(soup,nick):
     np_track = soup.lfm.recenttracks('track',nowplaying="true")
     if(np_track):
       np_track=np_track[0]
@@ -55,9 +38,32 @@ def lastfm(phenny, origin):
     
     answer = prefix + song + postfix
     return answer
+
+
+def lastfm(phenny, origin):
+  
+   lfmnames_file = open(configdir+'lfmnames','rb')
+   lfmnames = pickle.load(lfmnames_file)
+   lfmnames_file.close()
+  
+   nick = origin.nick
+   if origin.group(2):
+     nick = origin.group(2)
+   if nick in lfmnames:
+     nick = lfmnames[nick]
+     
+   nick = urllib.quote(nick.encode('utf-8'))
    
-   phenny.say(get_answer())
-   return
+   res = web.get(uri % nick)
+   
+   soup = BeautifulStoneSoup(res)
+   
+   if soup('lfm',status='failed'):
+     phenny.say('Error: '+soup.error.string)
+     return
+   else:
+     phenny.say(get_answer(soup,nick))
+     return
    
 def regname(phenny, origin):
   
@@ -65,12 +71,13 @@ def regname(phenny, origin):
    lfmnames = pickle.load(lfmnames_file)
    lfmnames_file.close()
   
-   if origin.group(3):
-     nick=origin.group(2)
-     lfmnick=origin.group(3)
+   split_or = origin.group(2).split()
+   if len(split_or) == 2:
+     nick=split_or[0]
+     lfmnick=split_or[1]
    else:
      nick=origin.nick
-     lfmnick = origin.group(2)
+     lfmnick = split_or[0]
    
   
    lfmnames.update({nick:lfmnick})
@@ -84,7 +91,7 @@ def regname(phenny, origin):
   
    
 lastfm.commands = ['lfm','np']
-regname.commands = ['reglfm']
+regname.commands = ['reglfm','lfmreg']
 
 if __name__ == '__main__': 
    print __doc__.strip()
