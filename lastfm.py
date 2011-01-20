@@ -13,6 +13,7 @@ from tools import deprecated
 from BeautifulSoup import BeautifulStoneSoup
 
 configdir = '/home/terasa/.phenny/'
+childish_include = True
 
 uri = 'http://ws.audioscrobbler.com/2.0/?method=user.getRecentTracks&user=%s&limit=1&api_key=d79a33d26929cc5ebe75411c0864f6be'
 
@@ -72,9 +73,13 @@ def regname(phenny, origin):
    lfmnames_file.close()
   
    split_or = origin.group(2).split()
-   if len(split_or) == 2:
-     nick=split_or[0]
-     lfmnick=split_or[1]
+   if len(split_or) >= 2:
+     if childish_include:
+      phenny.say("Error: Too many parameters.")
+      return
+     else:
+      nick=split_or[0]
+      lfmnick=''.join(split_or[1:])
    else:
      nick=origin.nick
      lfmnick = split_or[0]
