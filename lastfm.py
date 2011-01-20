@@ -6,7 +6,7 @@ Licensed under the Eiffel Forum License 2.
 
 http://inamidst.com/phenny/
 """
-import pickle
+import cPickle as pickle
 import re, urllib
 import web
 from tools import deprecated
