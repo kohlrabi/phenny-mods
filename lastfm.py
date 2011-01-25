@@ -1,41 +1,38 @@
 #!/usr/bin/env python
 """
-dict.py - Phenny Dictionary Module
-Copyright 2008-9, Sean B. Palmer, inamidst.com
-Licensed under the Eiffel Forum License 2.
+lastfm.py - Phenny Dictionary Module
+Copyright 2011, Christoph Terasa 
+Licensed under the .
 
 http://inamidst.com/phenny/
 """
 import cPickle as pickle
-import re, urllib
+import re, urllib, os
 import web
 from tools import deprecated
 from BeautifulSoup import BeautifulStoneSoup
 
-configdir = '/home/terasa/.phenny/'
+configdir = os.path.expanduser('~/.phenny/')
 childish_include = True
-
-uri = 'http://ws.audioscrobbler.com/2.0/?method=user.getRecentTracks&user=%s&limit=1&api_key=d79a33d26929cc5ebe75411c0864f6be'
-
 
 def get_answer(soup,nick):
     np_track = soup.lfm.recenttracks('track',nowplaying="true")
     if(np_track):
       np_track=np_track[0]
     else:
-      answer = '%s is currently not listening to or scrobbling any music :-('%nick
+      answer = u'%s is currently not listening to or scrobbling any music :-('%nick
       return answer
     artist = np_track.artist.string
     name_tag = np_track('name')[0]
     name = name_tag.string
     album = np_track.album.string
 		
-    prefix = '%s is currently listening to * '%nick
-    postfix =  ' *'
+    prefix = u'%s is currently listening to \u266B '%nick
+    postfix =  u' \u266B*'
     if album:
-      song =  '%s - [%s] - %s'%(artist,album,name)
+      song =  u'%s - [%s] - %s'%(artist,album,name)
     else:
-      song = '%s - %s'%(artist,name)
+      song = u'%s - %s'%(artist,name)
     
     answer = prefix + song + postfix
     return answer
@@ -43,19 +40,21 @@ def get_answer(soup,nick):
 
 def lastfm(phenny, origin):
   
-   lfmnames_file = open(configdir+'lfmnames','rb')
+   lastfm_api_key = phenny.config.lastfm_api_key
+   uri = 'http://ws.audioscrobbler.com/2.0/?method=user.getRecentTracks&user=%s&limit=1&api_key=%s'
+   lfmnames_file = open(os.path.join(configdir,'lfmnames'),'rb')
    lfmnames = pickle.load(lfmnames_file)
    lfmnames_file.close()
   
    nick = origin.nick
-   if origin.group(2):
-     nick = origin.group(2)
    if nick in lfmnames:
      nick = lfmnames[nick]
+   if origin.group(2):
+     nick = origin.group(2)
      
    nick = urllib.quote(nick.encode('utf-8'))
    
-   res = web.get(uri % nick)
+   res = web.get(uri % (nick,lastfm_api_key))
    
    soup = BeautifulStoneSoup(res)
    
@@ -68,7 +67,7 @@ def lastfm(phenny, origin):
    
 def regname(phenny, origin):
   
-   lfmnames_file = open(configdir+'lfmnames','rb')
+   lfmnames_file = open(os.path.join(configdir,'lfmnames'),'rb')
    lfmnames = pickle.load(lfmnames_file)
    lfmnames_file.close()
   
@@ -87,7 +86,7 @@ def regname(phenny, origin):
   
    lfmnames.update({nick:lfmnick})
   
-   lfmnames_file = open(configdir+'lfmnames','wb')
+   lfmnames_file = open(os.path.join(configdir,'lfmnames'),'wb')
    pickle.dump(lfmnames,lfmnames_file)
    lfmnames_file.close()
   
