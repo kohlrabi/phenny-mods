@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 """
-lastfm.py - Phenny Dictionary Module
+lastfm.py - Phenny last.fm Module
 Copyright 2011, Christoph Terasa 
-Licensed under the .
-
-http://inamidst.com/phenny/
+Licensed under the WTFPL.
 """
 import cPickle as pickle
 import re, urllib, os
