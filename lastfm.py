@@ -28,7 +28,7 @@ def get_answer(soup,nick):
     album = np_track.album.string
 		
     prefix = u'%s is currently listening to \u266B '%nick
-    postfix =  u' \u266B*'
+    postfix =  u' \u266B'
     if album:
       song =  u'%s - [%s] - %s'%(artist,album,name)
     else:
