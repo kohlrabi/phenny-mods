@@ -13,6 +13,35 @@ from BeautifulSoup import BeautifulStoneSoup
 configdir = os.path.expanduser('~/.phenny/')
 childish_include = True
 
+
+def now_playing(phenny, origin):
+  
+   lastfm_api_key = phenny.config.lastfm_api_key
+   uri = 'http://ws.audioscrobbler.com/2.0/?method=user.getRecentTracks&user=%s&limit=1&api_key=%s'
+   lfmnames_file = open(os.path.join(configdir,'lfmnames'),'rb')
+   lfmnames = pickle.load(lfmnames_file)
+   lfmnames_file.close()
+  
+   nick = origin.nick
+   if nick in lfmnames:
+     nick = lfmnames[nick]
+   if origin.group(2):
+     nick = origin.group(2)
+     
+   nick = urllib.quote(nick.encode('utf-8'))
+   
+   res = web.get(uri % (nick,lastfm_api_key))
+   
+   soup = BeautifulStoneSoup(res)
+   
+   if soup('lfm',status='failed'):
+     phenny.say(u"Error: "+soup.error.string)
+     return
+   else:
+     phenny.say(get_nowplaying(soup,nick))
+     return
+     
+
 def get_nowplaying(soup,nick):
     np_track = soup.lfm.recenttracks('track',nowplaying="true")
     if(np_track):
@@ -46,7 +75,7 @@ def similar(phenny,origin):
     soup = BeautifulStoneSoup(res)
    
     if soup('lfm',status='failed'):
-      phenny.say('Error: '+soup.error.string)
+      phenny.say(u"Error: "+soup.error.string)
       return
     else:
       multiline = False
@@ -73,42 +102,17 @@ def get_similar(soup,multiline=False):
       if multiline:
 	out += i('name')[0].string+u"\n"
       else:
-	out += i('name')[0].string+u" ; "
+	out += i('name')[0].string+u" | "
 
     output = u"Similar artists to %s: %s"%(artist,out)
+    
+    output = output.replace(u'&amp;',u'&')
     
     if multiline:
       return output.split(u"\n")
     else:
       return output[:-3]
 
-
-def now_playing(phenny, origin):
-  
-   lastfm_api_key = phenny.config.lastfm_api_key
-   uri = 'http://ws.audioscrobbler.com/2.0/?method=user.getRecentTracks&user=%s&limit=1&api_key=%s'
-   lfmnames_file = open(os.path.join(configdir,'lfmnames'),'rb')
-   lfmnames = pickle.load(lfmnames_file)
-   lfmnames_file.close()
-  
-   nick = origin.nick
-   if nick in lfmnames:
-     nick = lfmnames[nick]
-   if origin.group(2):
-     nick = origin.group(2)
-     
-   nick = urllib.quote(nick.encode('utf-8'))
-   
-   res = web.get(uri % (nick,lastfm_api_key))
-   
-   soup = BeautifulStoneSoup(res)
-   
-   if soup('lfm',status='failed'):
-     phenny.say('Error: '+soup.error.string)
-     return
-   else:
-     phenny.say(get_nowplaying(soup,nick))
-     return
    
 def regname(phenny, origin):
   
