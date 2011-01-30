@@ -13,7 +13,6 @@ from BeautifulSoup import BeautifulStoneSoup
 configdir = os.path.expanduser('~/.phenny/')
 childish_include = True
 
-
 def now_playing(phenny, origin):
   
    lastfm_api_key = phenny.config.lastfm_api_key
@@ -62,6 +61,8 @@ def get_nowplaying(soup,nick):
       song = u'%s - %s'%(artist,name)
     
     answer = prefix + song + postfix
+    answer = answer.replace(u'&amp;',u'&')
+
     return answer
 
 def similar(phenny,origin):
@@ -131,8 +132,7 @@ def regname(phenny, origin):
    else:
      nick=origin.nick
      lfmnick = split_or[0]
-   
-  
+     
    lfmnames.update({nick:lfmnick})
   
    lfmnames_file = open(os.path.join(configdir,'lfmnames'),'wb')
