@@ -13,7 +13,7 @@ from BeautifulSoup import BeautifulStoneSoup
 configdir = os.path.expanduser('~/.phenny/')
 childish_include = True
 
-def get_answer(soup,nick):
+def get_nowplaying(soup,nick):
     np_track = soup.lfm.recenttracks('track',nowplaying="true")
     if(np_track):
       np_track=np_track[0]
@@ -35,8 +35,55 @@ def get_answer(soup,nick):
     answer = prefix + song + postfix
     return answer
 
+def similar(phenny,origin):
+    lastfm_api_key = phenny.config.lastfm_api_key
+    artist = origin.group(2).encode('utf-8')
+   
+    uri = 'http://ws.audioscrobbler.com/2.0/?method=artist.getSimilar&limit=5&artist=%s&autocorrect=1&api_key=%s'
+   
+    res = web.get(uri % (artist,lastfm_api_key))
+   
+    soup = BeautifulStoneSoup(res)
+   
+    if soup('lfm',status='failed'):
+      phenny.say('Error: '+soup.error.string)
+      return
+    else:
+      multiline = False
+      sim = get_similar(soup,multiline)
+      if multiline:      
+	for s in sim:
+	  phenny.say(s)
+      else:
+	  phenny.say(sim)
+      return
+     
+def get_similar(soup,multiline=False):
+    node = soup.lfm.similarartists
+    
+    artist = node['artist']
+    
+    if multiline:
+      out = u"\n"
+    else:
+      out = u""    
+    
+    allart = node.findAll(name='artist')
+    for i in allart:
+      if multiline:
+	out += i('name')[0].string+u"\n"
+      else:
+	out += i('name')[0].string+u" ; "
 
-def lastfm(phenny, origin):
+    output = u"Similar artists to %s: %s"%(artist,out)
+    
+    if multiline:
+      return output.split(u"\n")
+    else:
+      return output[:-3]
+
+
+def now_playing(phenny, origin):
   
    lastfm_api_key = phenny.config.lastfm_api_key
    uri = 'http://ws.audioscrobbler.com/2.0/?method=user.getRecentTracks&user=%s&limit=1&api_key=%s'
@@ -60,7 +107,7 @@ def lastfm(phenny, origin):
      phenny.say('Error: '+soup.error.string)
      return
    else:
-     phenny.say(get_answer(soup,nick))
+     phenny.say(get_nowplaying(soup,nick))
      return
    
 def regname(phenny, origin):
@@ -91,8 +138,8 @@ def regname(phenny, origin):
    phenny.say('IRC nickname %s registered to last.fm nickname %s.'%(nick,lfmnick))
    return
   
-   
-lastfm.commands = ['lfm','np']
+similar.commands = ['lfmsim','sim']   
+now_playing.commands = ['lfm','np']
 regname.commands = ['reglfm','lfmreg']
 
 if __name__ == '__main__': 
