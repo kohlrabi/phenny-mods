@@ -67,7 +67,11 @@ def get_nowplaying(soup,nick):
 
 def similar(phenny,origin):
     lastfm_api_key = phenny.config.lastfm_api_key
-    artist = origin.group(2).encode('utf-8')
+    if origin.group(2):
+      artist = origin.group(2).encode('utf-8')
+    else:
+      phenny.say(u"No artist given.")
+      return
    
     uri = 'http://ws.audioscrobbler.com/2.0/?method=artist.getSimilar&limit=5&artist=%s&autocorrect=1&api_key=%s'
    
