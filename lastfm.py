@@ -14,6 +14,9 @@ from hashlib import md5
 configdir = os.path.expanduser('~/.phenny/')
 childish_include = True
 
+def setup(phenny):
+  phenny.lastfm_session_key = auth_user(phenny)
+
 def generate_api_sig(phenny,params):
   """
   params should be a dictionary of parameters INCLUDING the function name
@@ -26,19 +29,20 @@ def generate_api_sig(phenny,params):
   
   return out
 
-def auth_user(phenny, origin):
+def auth_user(phenny,pickle_key=False):
   """
   Uses auth data from the config file
   Config file stores username and md5 hash of password
   (if true, else plaintext in config)
   uses the mobile auth method
   """
-  keypath = os.path.join(configdir,'lfmkey')
-  if os.path.exists(keypath):
-    lfmkeyfile = open(keypath,'rb')
-    session_key = pickle.load(lfmkeyfile)
-    lfmkeyfile.close()
-    return session_key
+  if pickle_key:
+    keypath = os.path.join(configdir,'lfmkey')
+    if os.path.exists(keypath):
+      lfmkeyfile = open(keypath,'rb')
+      session_key = pickle.load(lfmkeyfile)
+      lfmkeyfile.close()
+      return session_key
     
   pw_hashed = False
   
@@ -68,9 +72,10 @@ def auth_user(phenny, origin):
     return
   else:
     session_key = soup.lfm.session.key.string
-    lfmkeyfile = open(keypath,'wb')
-    pickle.dump(session_key,lfmkeyfile)
-    lfmkeyfile.close()
+    if pickle_key:
+      lfmkeyfile = open(keypath,'wb')
+      pickle.dump(session_key,lfmkeyfile)
+      lfmkeyfile.close()
     return session_key
     
 
