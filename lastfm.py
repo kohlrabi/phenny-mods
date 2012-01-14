@@ -86,9 +86,7 @@ def now_playing(phenny, origin):
    lfmnames_file = open(os.path.join(configdir,'lfmnames'),'rb')
    lfmnames = pickle.load(lfmnames_file)
    lfmnames_file.close()
-   
-   phenny.say(key)
-  
+     
    nick = origin.nick
    if nick in lfmnames:
      nick = lfmnames[nick]
