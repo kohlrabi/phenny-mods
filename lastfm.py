@@ -13,6 +13,7 @@ from hashlib import md5
 
 configdir = os.path.expanduser('~/.phenny/')
 childish_include = True
+get_playcount = True
 
 def setup(phenny):
   phenny.lastfm_session_key = auth_user(phenny)
@@ -80,56 +81,104 @@ def auth_user(phenny,pickle_key=False):
     
 
 def now_playing(phenny, origin):
+  lastfm_api_key = phenny.config.lastfm_api_key
+  uri = 'http://ws.audioscrobbler.com/2.0/?method=user.getRecentTracks&user=%s&limit=1&api_key=%s'
+  lfmnames_file = open(os.path.join(configdir,'lfmnames'),'rb')
+  lfmnames = pickle.load(lfmnames_file)
+  lfmnames_file.close()
   
-   lastfm_api_key = phenny.config.lastfm_api_key
-   uri = 'http://ws.audioscrobbler.com/2.0/?method=user.getRecentTracks&user=%s&limit=1&api_key=%s'
-   lfmnames_file = open(os.path.join(configdir,'lfmnames'),'rb')
-   lfmnames = pickle.load(lfmnames_file)
-   lfmnames_file.close()
-     
-   nick = origin.nick
-   if nick in lfmnames:
-     nick = lfmnames[nick]
-   if origin.group(2):
-     nick = origin.group(2)
-     
-   nick = urllib.quote(nick.encode('utf-8'))
+  currently_playing = False
+  
+  nick = origin.nick
+  if nick in lfmnames:
+    nick = lfmnames[nick]
+  if origin.group(2):
+    nick = origin.group(2)
    
-   res = web.get(uri % (nick,lastfm_api_key))
-   
-   soup = BeautifulStoneSoup(res)
-   
-   if soup('lfm',status='failed'):
-     phenny.say(u"Error: "+soup.error.string)
-     return
-   else:
-     phenny.say(get_nowplaying(soup,nick))
-     return
+  nick = urllib.quote(nick.encode('utf-8'))
+
+  res = web.get(uri % (nick,lastfm_api_key))
+
+  soup = BeautifulStoneSoup(res)
+  
+  np_track = soup.lfm.recenttracks('track',nowplaying="true")
+  if(np_track):
+    currently_playing = True
+  else:
+    currently_playing = False
+    #answer = u'%s is currently not listening to or scrobbling any music :-('%nick
+    #phenny.say(answer)
+    #return
+  np_track=soup.lfm.recenttracks.track
+
+  if get_playcount:
+    mbid = np_track.mbid.string
+    if mbid:
+      uri2 = 'http://ws.audioscrobbler.com/2.0/?method=track.getInfo&mbid=%s&username=%s&api_key=%s'
+      res2 = web.get(uri2 % (mbid,nick,lastfm_api_key))
+    else:
+      artist = np_track.artist.string
+      album = np_track.album.string
+      track = np_track('name')[0].string
+      uri2 = 'http://ws.audioscrobbler.com/2.0/?method=track.getInfo&artist=%s&track=%s&username=%s&api_key=%s'
+      res2 = web.get(uri2 % (artist,track,nick,lastfm_api_key))
+        
+    soup2 = BeautifulStoneSoup(res2)
+    	
+  if soup('lfm',status='failed'):
+    phenny.say(u"Error: "+soup.lfm.error.string)
+    return
+  elif get_playcount and soup2('lfm',status='failed'):
+    phenny.say(u"Error: "+soup2.lfm.error.string)
+    return
+  else:
+    if get_playcount:
+      phenny.say(get_nowplaying(currently_playing,soup,nick,soup2))
+    else:
+      phenny.say(get_nowplaying(currently_playing,soup,nick))
+    return
      
 
-def get_nowplaying(soup,nick):
-    np_track = soup.lfm.recenttracks('track',nowplaying="true")
-    if(np_track):
-      np_track=np_track[0]
-    else:
-      answer = u'%s is currently not listening to or scrobbling any music :-('%nick
-      return answer
-    artist = np_track.artist.string
-    name_tag = np_track('name')[0]
-    name = name_tag.string
-    album = np_track.album.string
-		
-    prefix = u'%s is currently listening to \u266B '%nick
-    postfix =  u' \u266B'
-    if album:
-      song =  u'%s - [%s] - %s'%(artist,album,name)
-    else:
-      song = u'%s - %s'%(artist,name)
+def get_nowplaying(currently_playing,soup,nick,soup2=None):
+  np_track = soup.lfm.recenttracks.track
+  artist = np_track.artist.string
+  name_tag = np_track('name')[0]
+  name = name_tag.string
+  album = np_track.album.string
+
+  if get_playcount:
+    np_track2 = soup2.lfm.track
+    global_playcount = np_track2.playcount.string
+    num_listeners = np_track2.listeners.string
+    userplaycount = np_track2.userplaycount.string
+    userloved = int(np_track2.userloved.string)
+ 
+  if userloved == 1:
+    note = u'\u2665'
+  else:
+    note = u'\u266B'
+ 
+  if currently_playing:
+    prefix = u'%s is currently listening to %s '%(nick,note)
+  else:
+    prefix = u'%s has last listened to %s '%(nick,note)
+  postfix =  u' %s'%note
+  if album:
+    song =  u'%s - [%s] - %s'%(artist,album,name)
+  else:
+    song = u'%s - %s'%(artist,name)
     
-    answer = prefix + song + postfix
-    answer = answer.replace(u'&amp;',u'&')
 
-    return answer
+  if get_playcount:
+    pc = u' | %s plays by %s, %s plays by %s listeners.'%(userplaycount,nick,global_playcount,num_listeners)
+  else:
+    pc = u''
+  
+  
+  answer = prefix + song + postfix + pc
+  answer = answer.replace(u'&amp;',u'&')
+
+  return answer
 
 def similar(phenny,origin):
     lastfm_api_key = phenny.config.lastfm_api_key
