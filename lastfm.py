@@ -100,6 +100,12 @@ def now_playing(phenny, origin):
   res = web.get(uri % (nick,lastfm_api_key))
 
   soup = BeautifulStoneSoup(res)
+  if soup('lfm',status='failed'):
+    phenny.say(u"Error: "+soup.lfm.error.string)
+    return
+  elif not soup.lfm.recenttracks.track:
+    phenny.say(u"No recent tracks found for %s."%nick)
+    return
   
   np_track = soup.lfm.recenttracks('track',nowplaying="true")
   if(np_track):
@@ -124,14 +130,12 @@ def now_playing(phenny, origin):
       res2 = web.get(uri2 % (artist,track,nick,lastfm_api_key))
         
     soup2 = BeautifulStoneSoup(res2)
+    if get_playcount and soup2('lfm',status='failed'):
+      phenny.say(u"Error: "+soup2.lfm.error.string)
+      return
+  
     	
-  if soup('lfm',status='failed'):
-    phenny.say(u"Error: "+soup.lfm.error.string)
-    return
-  elif get_playcount and soup2('lfm',status='failed'):
-    phenny.say(u"Error: "+soup2.lfm.error.string)
-    return
-  else:
+ 
     if get_playcount:
       phenny.say(get_nowplaying(currently_playing,soup,nick,soup2))
     else:
