@@ -148,11 +148,15 @@ def get_nowplaying(currently_playing,np_track,nick,trackinfo=None):
   name_tag = np_track('name')[0]
   name = name_tag.string
   album = np_track.album.string
-
+  
+  userplaycount = None
   if get_playcount:
     global_playcount = trackinfo.playcount.string
     num_listeners = trackinfo.listeners.string
-    userplaycount = trackinfo.userplaycount.string
+    if trackinfo.userplaycount:
+      userplaycount = trackinfo.userplaycount.string
+    else:
+      userplaycount = "0"
     userloved = trackinfo.userloved.string
  
   if userloved == "1":
@@ -171,7 +175,6 @@ def get_nowplaying(currently_playing,np_track,nick,trackinfo=None):
   else:
     song = u'%s - %s'%(artist,name)
     
-
   if get_playcount:
     pc = u' | %s plays by %s, %s plays by %s listeners.'%(userplaycount,nick,global_playcount,num_listeners)
   else:
