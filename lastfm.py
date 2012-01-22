@@ -166,7 +166,8 @@ def get_nowplaying(currently_playing,soup,nick,soup2=None):
   if currently_playing:
     prefix = u'%s is currently listening to %s '%(nick,note)
   else:
-    prefix = u'%s has last listened to %s '%(nick,note)
+    date = np_track.date.string
+    prefix = u'On %s %s has listened to %s '%(date,nick,note)
   postfix =  u' %s'%note
   if album:
     song =  u'%s - [%s] - %s'%(artist,album,name)
