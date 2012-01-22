@@ -134,31 +134,28 @@ def now_playing(phenny, origin):
     if get_playcount and soup2('lfm',status='failed'):
       phenny.say(u"Error: "+soup2.lfm.error.string)
       return
-  
-    	
+    trackinfo = soup2.lfm.track
  
     if get_playcount:
-      phenny.say(get_nowplaying(currently_playing,soup,nick,soup2))
+      phenny.say(get_nowplaying(currently_playing,np_track,nick,trackinfo))
     else:
-      phenny.say(get_nowplaying(currently_playing,soup,nick))
+      phenny.say(get_nowplaying(currently_playing,np_track,nick))
     return
      
 
-def get_nowplaying(currently_playing,soup,nick,soup2=None):
-  np_track = soup.lfm.recenttracks.track
+def get_nowplaying(currently_playing,np_track,nick,trackinfo=None):
   artist = np_track.artist.string
   name_tag = np_track('name')[0]
   name = name_tag.string
   album = np_track.album.string
 
   if get_playcount:
-    np_track2 = soup2.lfm.track
-    global_playcount = np_track2.playcount.string
-    num_listeners = np_track2.listeners.string
-    userplaycount = np_track2.userplaycount.string
-    userloved = int(np_track2.userloved.string)
+    global_playcount = trackinfo.playcount.string
+    num_listeners = trackinfo.listeners.string
+    userplaycount = trackinfo.userplaycount.string
+    userloved = trackinfo.userloved.string
  
-  if userloved == 1:
+  if userloved == "1":
     note = u'\u2665'
   else:
     note = u'\u266B'
