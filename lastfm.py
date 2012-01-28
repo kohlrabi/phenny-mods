@@ -89,11 +89,16 @@ def now_playing(phenny, origin):
   
   currently_playing = False
   
+  spl = origin.group(2).split()
+  
+  if len(spl)>1:
+    tasteometer(phenny,origin)
+    return
   nick = origin.nick
-  if nick in lfmnames:
-    nick = lfmnames[nick]
   if origin.group(2):
     nick = origin.group(2)
+  if nick in lfmnames:
+    nick = lfmnames[nick]
    
   nick = urllib.quote(nick.encode('utf-8'))
 
@@ -280,9 +285,9 @@ def get_tags(soup):
     allart = node.findAll(name='artist')
     for i in allart:
       if multiline:
-	out += i('name')[0].string+u"\n"
+        out += i('name')[0].string+u"\n"
       else:
-	out += i('name')[0].string+u" | "
+        out += i('name')[0].string+u" | "
 
     output = u"Similar artists to %s: %s"%(artist,out)
     
@@ -295,7 +300,6 @@ def get_tags(soup):
 
    
 def regname(phenny, origin):
-  
    lfmnames_file = open(os.path.join(configdir,'lfmnames'),'rb')
    lfmnames = pickle.load(lfmnames_file)
    lfmnames_file.close()
@@ -320,9 +324,57 @@ def regname(phenny, origin):
   
    phenny.say('IRC nickname %s registered to last.fm nickname %s.'%(nick,lfmnick))
    return
+   
+
+def tasteometer(phenny,origin,limit=5):
+  lastfm_api_key = phenny.config.lastfm_api_key
+  uri = u'http://ws.audioscrobbler.com/2.0/?method=tasteometer.compare&type1=user&type2=user&value1=%s&value2=%s&limit=%i&api_key=%s'
+  lfmnames_file = open(os.path.join(configdir,'lfmnames'),'rb')
+  lfmnames = pickle.load(lfmnames_file)
+  lfmnames_file.close()
+  
+  spl = origin.group(2).split()
+  
+  if len(spl)>1:
+    nick1 = spl[0]
+    nick2 = spl[1]
+  else:
+    nick1 = origin.nick
+    nick2 = origin.group(2)
+  
+  if nick1 in lfmnames:
+    nick1 = lfmnames[nick1]
+  if nick2 in lfmnames:
+    nick2 = lfmnames[nick2]
+   
+  nick1 = urllib.quote(nick1.encode('utf-8'))
+  nick2 = urllib.quote(nick2.encode('utf-8'))
+
+  res = web.get(uri % (nick1,nick2,limit,lastfm_api_key))
+
+  soup = BeautifulStoneSoup(res)
+  if soup('lfm',status='failed'):
+    phenny.say(u"Error: "+soup.lfm.error.string)
+    return
+    
+  comp = soup.lfm.comparison.result
+  score = float(comp.score.string)
+  score *= 100    # calculate percentage
+  artists = comp.artists
+  artistnames=""
+  allart = artists.findAll(name='artist')
+  for a in allart[:-1]:
+    artistname = (a('name')[0].string.encode('utf-8'))
+    artistnames += artistname+u", "
+  artistnames += allart[-1]('name')[0].string.encode('utf-8')+u"."
+  
+  phenny.say("Tasteometer score for %s and %s: %.1f%%. Common artists include %s"%(nick1,nick2,score,artistnames))
+  
+  return
   
 similar.commands = ['lfmsim','sim']   
 now_playing.commands = ['lfm','np']
+tasteometer.commands = ['lfmcomp','complfm']
 regname.commands = ['reglfm','lfmreg']
 auth_user.commands = ['lfmauth']
 
