@@ -194,19 +194,21 @@ def get_nowplaying(currently_playing,np_track,nick,trackinfo=None):
 def similar(phenny,origin):
     lastfm_api_key = phenny.config.lastfm_api_key
     if origin.group(2):
-      artist = origin.group(2).encode('utf-8')
+      artist = origin.group(2)
+      artist = artist.replace(u'\u00E9','e')
+      artist.encode('utf-8')
     else:
       phenny.say(u"No artist given.")
       return
    
     uri = u'http://ws.audioscrobbler.com/2.0/?method=artist.getSimilar&limit=5&artist=%s&autocorrect=1&api_key=%s'
    
-    res = web.get(uri % (artist,lastfm_api_key))
+    res = web.get(uri % (urllib.quote(artist.decode('utf-8')),lastfm_api_key))
    
     soup = BeautifulStoneSoup(res)
    
     if soup('lfm',status='failed'):
-      phenny.say(u"Error: "+soup.error.string)
+      phenny.say(u"Error: "+soup.lfm.error.string)
       return
     else:
       multiline = False
