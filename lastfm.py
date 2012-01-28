@@ -361,14 +361,23 @@ def tasteometer(phenny,origin,limit=5):
   score = float(comp.score.string)
   score *= 100    # calculate percentage
   artists = comp.artists
-  artistnames=""
-  allart = artists.findAll(name='artist')
-  for a in allart[:-1]:
-    artistname = (a('name')[0].string.encode('utf-8'))
-    artistnames += artistname+u", "
-  artistnames += allart[-1]('name')[0].string.encode('utf-8')+u"."
   
-  phenny.say("Tasteometer score for %s and %s: %.1f%%. Common artists include %s"%(nick1,nick2,score,artistnames))
+  allart = artists.findAll(name='artist')
+  
+  if len(allart) == 0:
+    artistnames = None
+   
+  else:
+    artistnames=""
+    for a in allart[:-1]:
+      artistname = (a('name')[0].string.encode('utf-8'))
+      artistnames += artistname+u", "
+    artistnames += allart[-1]('name')[0].string.encode('utf-8')+u"."
+
+  if artistnames:
+    phenny.say("Tasteometer score for %s and %s: %.1f%%. Common artists include %s"%(nick1,nick2,score,artistnames))
+  else:
+    phenny.say("Tasteometer score for %s and %s: %.1f%%."%(nick1,nick2,score))
   
   return
   
