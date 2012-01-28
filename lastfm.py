@@ -185,7 +185,6 @@ def get_nowplaying(currently_playing,np_track,nick,trackinfo=None):
   else:
     pc = u''
   
-  
   answer = prefix + song + postfix + pc
   answer = answer.replace(u'&amp;',u'&')
 
@@ -367,12 +366,15 @@ def tasteometer(phenny,origin,limit=5):
   if len(allart) == 0:
     artistnames = None
    
+   #answer = answer.replace(u'&amp;',u'&')
+   #.encode('utf-8')
   else:
-    artistnames=""
+    artistnames=u""
     for a in allart[:-1]:
-      artistname = (a('name')[0].string.encode('utf-8'))
+      artistname = (a('name')[0].string)
       artistnames += artistname+u", "
-    artistnames += allart[-1]('name')[0].string.encode('utf-8')+u"."
+    artistnames += allart[-1]('name')[0].string+u"."
+    artistnames = artistnames.replace(u'&amp;',u'&')
 
   if artistnames:
     phenny.say("Tasteometer score for %s and %s: %.1f%%. Common artists include %s"%(nick1,nick2,score,artistnames))
