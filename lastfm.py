@@ -89,11 +89,12 @@ def now_playing(phenny, origin):
   
   currently_playing = False
   
-  spl = origin.group(2).split()
+  if origin.group(2):
+    spl = origin.group(2)
+    if len(spl)>1:
+      tasteometer(phenny,origin)
+      return
   
-  if len(spl)>1:
-    tasteometer(phenny,origin)
-    return
   nick = origin.nick
   if origin.group(2):
     nick = origin.group(2)
