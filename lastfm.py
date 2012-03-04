@@ -130,8 +130,10 @@ def now_playing(phenny, origin):
       res2 = web.get(uri2 % (mbid,nick,lastfm_api_key))
     else:
       artist = np_track.artist.string
+      artist = artist.replace(u'&amp;',u'&')
       artist = urllib.quote(artist.encode('utf-8'))
       track = np_track('name')[0].string
+      track = track.replace(u'&amp;',u'&')
       track = urllib.quote(track.encode('utf-8'))
       uri2 = 'http://ws.audioscrobbler.com/2.0/?method=track.getInfo&artist=%s&track=%s&username=%s&api_key=%s'
       res2 = web.get(uri2 % (artist,track,nick,lastfm_api_key))
